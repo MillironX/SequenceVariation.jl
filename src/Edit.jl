@@ -62,6 +62,28 @@ Base.hash(x::InsertionEdit, h::UInt) = hash(InsertionEdit, hash((x.position, x.s
 BioGenerics.leftposition(i::InsertionEdit) = i.position
 BioGenerics.rightposition(i::InsertionEdit) = leftposition(i) + 1
 
+struct SubstitutionEdit{S<:BioSequence,T<:BioSymbol} <: Edit{S,T}
+    position::UInt
+    base::T
+
+    function SubstitutionEdit{T}(position::UInt, base::T) where {T<:BioSymbol}
+        iszero(position) &&
+    function SubstitutionEdit{S,T}(
+        position::UInt, base::T
+    ) where {S<:BioSequence,T<:BioSymbol}
+        return new(position, base)
+    end
+end
+Base.length(s::SubstitutionEdit) = 1
+function Base.:(==)(x::SubstitutionEdit, y::SubstitutionEdit)
+    return x.position == y.position && x.base == y.base
+end
+function Base.hash(x::SubstitutionEdit, h::UInt)
+    return hash(SubstitutionEdit, hash((x.position, x.base), h))
+end
+BioGenerics.leftposition(s::SubstitutionEdit) = s.position
+BioGenerics.rightposition(s::SubstitutionEdit) = leftposition(s)
+
 function Base.parse(::Type{T}, s::AbstractString) where {T<:Edit{Se,Sy}} where {Se,Sy}
     return parse(T, String(s))
 end
