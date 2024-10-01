@@ -46,6 +46,22 @@ Base.hash(x::DeletionEdit, h::UInt) = hash(DeletionEdit, hash((x.position, x.len
 BioGenerics.leftposition(d::DeletionEdit) = d.position
 BioGenerics.rightposition(d::DeletionEdit) = leftposition(d) + length(d) - 1
 
+struct InsertionEdit{S<:BioSequence,T<:BioSymbol} <: Edit{S,T}
+    position::UInt
+    seq::S
+
+    function InsertionEdit{S}(position::UInt, seq::S) where {S<:BioSequence}
+        iszero(position) && error("Insertion cannot be at a position outside the sequence")
+    function InsertionEdit{S,T}(position::UInt, seq::S) where {S<:BioSequence,T<:BioSymbol}
+        return new(position, seq)
+    end
+end
+Base.length(i::InsertionEdit) = length(i.seq)
+Base.:(==)(x::InsertionEdit, y::InsertionEdit) = x.position == y.position && x.seq == y.seq
+Base.hash(x::InsertionEdit, h::UInt) = hash(InsertionEdit, hash((x.position, x.seq), h))
+BioGenerics.leftposition(i::InsertionEdit) = i.position
+BioGenerics.rightposition(i::InsertionEdit) = leftposition(i) + 1
+
 function Base.parse(::Type{T}, s::AbstractString) where {T<:Edit{Se,Sy}} where {Se,Sy}
     return parse(T, String(s))
 end
