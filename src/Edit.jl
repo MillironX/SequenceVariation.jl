@@ -11,9 +11,10 @@ If insertion: Insertion of length L b/w ref pos `pos:pos+1`
 """
 abstract type Edit{S<:BioSequence,T<:BioSymbol} end
 
-Base.length(e::Edit) = length(_mutation(e))
-Base.:(==)(e1::Edit, e2::Edit) = e1.pos == e2.pos && e1.x == e2.x
-Base.hash(x::Edit, h::UInt) = hash(Edit, hash((x.x, x.pos), h))
+Base.length(e::Edit) = error("length not implemented for type $(typeof(e))")
+Base.:(==)(e1::Edit, e2::Edit) = typeof(e1) == typeof(e2) && e1 == e2
+Base.hash(x::Edit, h::UInt) = error("hash not implemented for type $(typeof(x))")
+
 function Base.isless(x::Edit, y::Edit)
     if leftposition(x) == leftposition(y)
         return length(x) < length(y)
