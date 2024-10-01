@@ -23,6 +23,13 @@ function Base.isless(x::Edit, y::Edit)
     return leftposition(x) < leftposition(y)
 end
 
+function BioGenerics.leftposition(e::Edit)
+    return error("leftposition not implemented for type $(typeof(e))")
+end
+function BioGenerics.rightposition(e::Edit)
+    return error("rightposition not implemented for type $(typeof(e))")
+end
+
 struct DeletionEdit{S<:BioSequence,T<:BioSymbol} <: Edit{S,T}
     position::UInt
     length::UInt
@@ -105,19 +112,6 @@ function Base.parse(::Type{<:Edit{Se,Sy}}, s::Union{String,SubString{String}}) w
         return SubstitutionEdit{Se,Sy}(pos, sym)
     else
         throw(ArgumentError("Failed to parse edit \"" * s * '"'))
-    end
-end
-
-BioGenerics.leftposition(e::Edit) = e.pos
-function BioGenerics.rightposition(e::Edit)
-    if _mutation(e) isa Substitution
-        return leftposition(e)
-    elseif _mutation(e) isa Insertion
-        return leftposition(e) + 1
-    elseif _mutation(e) isa Deletion
-        return leftposition(e) + length(e) - 1
-    else
-        error("Unknown mutation type $(typeof(_mutation(e)))")
     end
 end
 
