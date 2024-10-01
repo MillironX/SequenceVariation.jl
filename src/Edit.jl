@@ -61,13 +61,13 @@ BioGenerics.leftposition(d::DeletionEdit) = d.position
 BioGenerics.rightposition(d::DeletionEdit) = leftposition(d) + length(d) - 1
 _lendiff(d::DeletionEdit) = -1 * length(d)
 
-struct InsertionEdit{S<:BioSequence} <: Edit
+struct InsertionEdit{S,T} <: Edit{S,T}
     position::UInt
-struct InsertionEdit{S,T} <: Edit{S,T} where {S<:BioSequence,T<:BioSymbol}
+    seq::S
 
-    function InsertionEdit{S}(position::UInt, seq::S) where {S<:BioSequence}
-        iszero(position) && error("Insertion cannot be at a position outside the sequence")
     function InsertionEdit{S,T}(position::UInt, seq::S) where {S<:BioSequence,T<:BioSymbol}
+        iszero(position) && error("Insertion cannot be at a position outside the sequence")
+        isempty(seq) && error("Insertion must be at least 1 symbol")
         return new(position, seq)
     end
 end
@@ -78,15 +78,15 @@ BioGenerics.leftposition(i::InsertionEdit) = i.position
 BioGenerics.rightposition(i::InsertionEdit) = leftposition(i) + 1
 _lendiff(i::InsertionEdit) = length(i)
 
-struct SubstitutionEdit{T} <: Edit where {T<:BioSymbol}
+struct SubstitutionEdit{S,T} <: Edit{S,T}
     position::UInt
-struct SubstitutionEdit{S,T} <: Edit{S,T} where {S<:BioSequence,T<:BioSymbol}
+    base::T
 
-    function SubstitutionEdit{T}(position::UInt, base::T) where {T<:BioSymbol}
-        iszero(position) &&
     function SubstitutionEdit{S,T}(
         position::UInt, base::T
     ) where {S<:BioSequence,T<:BioSymbol}
+        iszero(position) &&
+            error("Substitution cannot be at a position outside the sequence")
         return new(position, base)
     end
 end
