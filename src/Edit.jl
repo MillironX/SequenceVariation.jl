@@ -37,7 +37,7 @@ Gets the number of bases that `edit` adds to the reference sequence
 """
 _lendiff(edit::Edit) = error("_lendiff not implemented for type $(typeof(edit))")
 
-struct DeletionEdit{S<:BioSequence,T<:BioSymbol} <: Edit{S,T}
+struct DeletionEdit{S,T} <: Edit{S,T}
     position::UInt
     length::UInt
 
@@ -61,9 +61,9 @@ BioGenerics.leftposition(d::DeletionEdit) = d.position
 BioGenerics.rightposition(d::DeletionEdit) = leftposition(d) + length(d) - 1
 _lendiff(d::DeletionEdit) = -1 * length(d)
 
-struct InsertionEdit{S<:BioSequence,T<:BioSymbol} <: Edit{S,T}
+struct InsertionEdit{S<:BioSequence} <: Edit
     position::UInt
-    seq::S
+struct InsertionEdit{S,T} <: Edit{S,T} where {S<:BioSequence,T<:BioSymbol}
 
     function InsertionEdit{S}(position::UInt, seq::S) where {S<:BioSequence}
         iszero(position) && error("Insertion cannot be at a position outside the sequence")
@@ -78,9 +78,9 @@ BioGenerics.leftposition(i::InsertionEdit) = i.position
 BioGenerics.rightposition(i::InsertionEdit) = leftposition(i) + 1
 _lendiff(i::InsertionEdit) = length(i)
 
-struct SubstitutionEdit{S<:BioSequence,T<:BioSymbol} <: Edit{S,T}
+struct SubstitutionEdit{T} <: Edit where {T<:BioSymbol}
     position::UInt
-    base::T
+struct SubstitutionEdit{S,T} <: Edit{S,T} where {S<:BioSequence,T<:BioSymbol}
 
     function SubstitutionEdit{T}(position::UInt, base::T) where {T<:BioSymbol}
         iszero(position) &&
@@ -111,15 +111,15 @@ function Base.parse(::Type{<:Edit{Se,Sy}}, s::Union{String,SubString{String}}) w
         pos = parse(UInt, m[1])
         stop = parse(UInt, m[2])
         stop ≥ pos || throw(ArgumentError("Non-positive deletion length: \"" * s * "\""))
-        return DeletionEdit{Se,Sy}(pos, stop - pos + 1)
+        return DeletionEdit(pos, stop - pos + 1)
     elseif (m = match(r"^(\d+)([A-Za-z]+)$", s); m) !== nothing
         pos = parse(UInt, m[1])
         seq = Se(m[2])
-        return InsertionEdit{Se,Sy}(pos, seq)
+        return InsertionEdit{Se}(pos, seq)
     elseif (m = match(r"^[A-Za-z](\d+)([A-Za-z])$", s); m) !== nothing
         pos = parse(UInt, m[1])
         sym = Sy(first(m[2]))
-        return SubstitutionEdit{Se,Sy}(pos, sym)
+        return SubstitutionEdit{Sy}(pos, sym)
     else
         throw(ArgumentError("Failed to parse edit \"" * s * '"'))
     end
