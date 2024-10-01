@@ -30,6 +30,13 @@ function BioGenerics.rightposition(e::Edit)
     return error("rightposition not implemented for type $(typeof(e))")
 end
 
+"""
+    _lendiff(edit::Edit)
+
+Gets the number of bases that `edit` adds to the reference sequence
+"""
+_lendiff(edit::Edit) = error("_lendiff not implemented for type $(typeof(edit))")
+
 struct DeletionEdit{S<:BioSequence,T<:BioSymbol} <: Edit{S,T}
     position::UInt
     length::UInt
@@ -52,6 +59,7 @@ end
 Base.hash(x::DeletionEdit, h::UInt) = hash(DeletionEdit, hash((x.position, x.length), h))
 BioGenerics.leftposition(d::DeletionEdit) = d.position
 BioGenerics.rightposition(d::DeletionEdit) = leftposition(d) + length(d) - 1
+_lendiff(d::DeletionEdit) = -1 * length(d)
 
 struct InsertionEdit{S<:BioSequence,T<:BioSymbol} <: Edit{S,T}
     position::UInt
@@ -68,6 +76,7 @@ Base.:(==)(x::InsertionEdit, y::InsertionEdit) = x.position == y.position && x.s
 Base.hash(x::InsertionEdit, h::UInt) = hash(InsertionEdit, hash((x.position, x.seq), h))
 BioGenerics.leftposition(i::InsertionEdit) = i.position
 BioGenerics.rightposition(i::InsertionEdit) = leftposition(i) + 1
+_lendiff(i::InsertionEdit) = length(i)
 
 struct SubstitutionEdit{S<:BioSequence,T<:BioSymbol} <: Edit{S,T}
     position::UInt
@@ -90,6 +99,7 @@ function Base.hash(x::SubstitutionEdit, h::UInt)
 end
 BioGenerics.leftposition(s::SubstitutionEdit) = s.position
 BioGenerics.rightposition(s::SubstitutionEdit) = leftposition(s)
+_lendiff(s::SubstitutionEdit) = 0
 
 function Base.parse(::Type{T}, s::AbstractString) where {T<:Edit{Se,Sy}} where {Se,Sy}
     return parse(T, String(s))
@@ -113,16 +123,4 @@ function Base.parse(::Type{<:Edit{Se,Sy}}, s::Union{String,SubString{String}}) w
     else
         throw(ArgumentError("Failed to parse edit \"" * s * '"'))
     end
-end
-
-"""
-    _lendiff(edit::Edit)
-
-Gets the number of bases that `edit` adds to the reference sequence
-"""
-function _lendiff(edit::Edit)
-    x = _mutation(edit)
-    # Each edit type has logic for its length, we just need to know what direction to go
-    multiplier = x isa Substitution ? 0 : (x isa Deletion ? -1 : 1)
-    return length(x) * multiplier
 end
