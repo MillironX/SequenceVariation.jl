@@ -23,6 +23,29 @@ function Base.isless(x::Edit, y::Edit)
     return leftposition(x) < leftposition(y)
 end
 
+struct DeletionEdit{S<:BioSequence,T<:BioSymbol} <: Edit{S,T}
+    position::UInt
+    length::UInt
+
+    function DeletionEdit{S,T}(
+        position::UInt, length::UInt
+    ) where {S<:BioSequence,T<:BioSymbol}
+        iszero(position) && error("Deletion cannot be at a position outside the sequence")
+        iszero(length) && error("Deletion must be at least 1 symbol")
+        return new(position, length)
+    end
+end
+
+DeletionEdit(x::Integer, y::Integer) = DeletionEdit(convert(UInt, x), convert(UInt, y))
+
+Base.length(d::DeletionEdit) = Int(d.length)
+function Base.:(==)(d1::DeletionEdit, d2::DeletionEdit)
+    return d1.position == d2.position && d1.length == d2.length
+end
+Base.hash(x::DeletionEdit, h::UInt) = hash(DeletionEdit, hash((x.position, x.length), h))
+BioGenerics.leftposition(d::DeletionEdit) = d.position
+BioGenerics.rightposition(d::DeletionEdit) = leftposition(d) + length(d) - 1
+
 function Base.parse(::Type{T}, s::AbstractString) where {T<:Edit{Se,Sy}} where {Se,Sy}
     return parse(T, String(s))
 end
