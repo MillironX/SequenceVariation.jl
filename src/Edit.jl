@@ -94,15 +94,15 @@ function Base.parse(::Type{<:Edit{Se,Sy}}, s::Union{String,SubString{String}}) w
         pos = parse(UInt, m[1])
         stop = parse(UInt, m[2])
         stop ≥ pos || throw(ArgumentError("Non-positive deletion length: \"" * s * "\""))
-        Edit{Se,Sy}(Deletion(stop - pos + 1), pos)
+        return DeletionEdit{Se,Sy}(pos, stop - pos + 1)
     elseif (m = match(r"^(\d+)([A-Za-z]+)$", s); m) !== nothing
         pos = parse(UInt, m[1])
         seq = Se(m[2])
-        Edit{Se,Sy}(Insertion(seq), pos)
+        return InsertionEdit{Se,Sy}(pos, seq)
     elseif (m = match(r"^[A-Za-z](\d+)([A-Za-z])$", s); m) !== nothing
         pos = parse(UInt, m[1])
         sym = Sy(first(m[2]))
-        Edit{Se,Sy}(Substitution(sym), pos)
+        return SubstitutionEdit{Se,Sy}(pos, sym)
     else
         throw(ArgumentError("Failed to parse edit \"" * s * '"'))
     end
