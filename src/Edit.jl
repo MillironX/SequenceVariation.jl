@@ -9,10 +9,7 @@ An edit of either `Substitution{T}`, `Insertion{S}` or `Deletion` at a position.
 If deletion: Deletion of length L at ref pos `pos:pos+L-1`
 If insertion: Insertion of length L b/w ref pos `pos:pos+1`
 """
-struct Edit{S<:BioSequence,T<:BioSymbol}
-    x::Union{Substitution{T},Deletion,Insertion{S}}
-    pos::UInt
-end
+abstract type Edit{S<:BioSequence,T<:BioSymbol} end
 
 Base.length(e::Edit) = length(_mutation(e))
 Base.:(==)(e1::Edit, e2::Edit) = e1.pos == e2.pos && e1.x == e2.x
