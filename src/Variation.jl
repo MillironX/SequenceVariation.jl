@@ -19,36 +19,17 @@ following syntax:
 - Substitution: `"<REFBASE><POS><ALTBASE>"`, e.g. `"G16C"`
 - Deletion: `"Δ<STARTPOS>-<ENDPOS>"`, e.g. `"Δ1-2"`
 - Insertion: `"<POS><ALTBASES>"`, e.g. `"11T"`
+
+# Other information
+
+Internally, any type which implements `Variation` **must** expose the following fields:
+- `ref::S`
+- `edit::Edit{S,T}`
+
+Other fields may be used for internal purposes, if needed.
+
 """
-struct Variation{S<:BioSequence,T<:BioSymbol}
-    ref::S
-    edit::Edit{S,T}
-
-    function Variation{S,T}(
-        ref::S, e::Edit{S,T}, ::Unsafe
-    ) where {S<:BioSequence,T<:BioSymbol}
-        return new(ref, e)
-    end
-end
-
-function Variation{S,T}(ref::S, e::Edit{S,T}) where {S<:BioSequence,T<:BioSymbol}
-    v = Variation{S,T}(ref, e, Unsafe())
-    return _is_valid(v) ? v : throw(ArgumentError("Invalid variant"))
-end
-
-Variation(ref::S, edit::Edit{S,T}) where {S,T} = Variation{S,T}(ref, edit)
-
-function Variation(ref::S, edit::AbstractString) where {S<:BioSequence}
-    T = eltype(ref)
-
-    e = parse(Edit{S,T}, edit)
-    return Variation{S,T}(ref, e)
-end
-
-function Haplotype(ref::S, vars::Vector{Variation{S,T}}) where {S<:BioSequence,T<:BioSymbol}
-    edits = _edit.(vars)
-    return Haplotype{S,T}(ref, edits)
-end
+abstract type Variation{S<:BioSequence,T<:BioSymbol} end
 
 """
     reference(v::Variation)
@@ -64,13 +45,6 @@ Gets the underlying [`Edit`](@ref) of `v`
 """
 _edit(v::Variation) = v.edit
 
-"""
-    mutation(v::Variation)
-
-Gets the underlying [`Substitution`](@ref), [`Insertion`](@ref), or [`Deletion`](@ref) of
-`v`.
-"""
-mutation(v::Variation) = _mutation(_edit(v))
 BioGenerics.leftposition(v::Variation) = leftposition(_edit(v))
 BioGenerics.rightposition(v::Variation) = rightposition(_edit(v))
 Base.:(==)(x::Variation, y::Variation) = x.ref == y.ref && x.edit == y.edit
@@ -79,6 +53,32 @@ function Base.isless(x::Variation, y::Variation)
     reference(x) == reference(y) ||
         error("Variations cannot be compared if their reference sequences aren't equal")
     return leftposition(x) < leftposition(y)
+end
+
+function _refbases(v::Variation{S,T}, ::UInt) where {S,T}
+    return error("_refbases not implemented for type $(typeof(v))")
+end
+
+function _altbases(v::Variation{S,T}, ::UInt) where {S,T}
+    return error("_altbases not implemented for type $(typeof(v))")
+end
+
+struct Substitution{S,T} <: Variation{S,T}
+    ref::S
+    edit::SubstitutionEdit{S,T}
+end
+
+function _refbases(s::Substitution{S,T}, pos::UInt) where {S,T}
+    return S([reference(s)[pos]])
+end
+
+function _altbases(s::Substitution{S,T}, pos::UInt) where {S,T}
+    return S([_base(s)])
+end
+
+function Haplotype(ref::S, vars::Vector{Variation{S,T}}) where {S<:BioSequence,T<:BioSymbol}
+    edits = _edit.(vars)
+    return Haplotype{S,T}(ref, edits)
 end
 
 """
