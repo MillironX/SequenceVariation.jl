@@ -1,7 +1,3 @@
-include("edits/Substitution.jl")
-include("edits/Deletion.jl")
-include("edits/Insertion.jl")
-
 """
     Edit{S <: BioSequence, T <: BioSymbol}
 
@@ -100,6 +96,7 @@ end
 BioGenerics.leftposition(s::SubstitutionEdit) = s.position
 BioGenerics.rightposition(s::SubstitutionEdit) = leftposition(s)
 _lendiff(s::SubstitutionEdit) = 0
+_base(s::SubstitutionEdit) = s.base
 
 function Base.parse(::Type{T}, s::AbstractString) where {T<:Edit{Se,Sy}} where {Se,Sy}
     return parse(T, String(s))
